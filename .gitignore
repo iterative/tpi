@@ -1,0 +1,13 @@
+*.py[cod]
+/tpi/_dist_ver.py
+
+# Packages
+/*.egg*/
+/build/
+/dist/
+
+# Unit test / coverage reports
+/.coverage
+/.pytest_cache/
+/coverage.xml
+__pycache__/
