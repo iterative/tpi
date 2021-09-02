@@ -13,20 +13,19 @@ logger = logging.getLogger(__name__)
 class TerraformBackend(BaseMachineBackend):
     @contextmanager
     def make_tf(self, name: str):
-        from dvc.tpi import DvcTerraform, TerraformError
-        from dvc.utils.fs import makedirs
+        from tpi import TerraformProviderIterative, TPIError
 
         try:
             working_dir = os.path.join(self.tmp_dir, name)
-            makedirs(working_dir, exist_ok=True)
-            yield DvcTerraform(working_dir=working_dir)
-        except TerraformError:
+            os.makedirs(working_dir, exist_ok=True)
+            yield TerraformProviderIterative(working_dir=working_dir)
+        except TPIError:
             raise
         except Exception as exc:
-            raise TerraformError("terraform failed") from exc
+            raise TPIError("terraform failed") from exc
 
     def create(self, name: Optional[str] = None, **config):
-        from dvc.tpi import render_json
+        from tpi import render_json
         from python_terraform import IsFlagged
 
         assert name and "cloud" in config
@@ -53,18 +52,18 @@ class TerraformBackend(BaseMachineBackend):
             yield from tf.iter_instances(name)
 
     def _default_resource(self, name):
-        from dvc.tpi import TerraformError
+        from tpi import TPIError
 
         resource = first(self.instances(name))
         if not resource:
-            raise TerraformError(f"No active '{name}' instances")
+            raise TPIError(f"No active '{name}' instances")
         return resource
 
     def run_shell(self, name: Optional[str] = None, **config):
-        from dvc.tpi import DvcTerraform
+        from tpi import TerraformProviderIterative
 
         resource = self._default_resource(name)
-        with DvcTerraform.pemfile(resource) as pem:
+        with TerraformProviderIterative.pemfile(resource) as pem:
             self._shell(
                 host=resource["instance_ip"],
                 username="ubuntu",

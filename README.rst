@@ -3,7 +3,15 @@ TPI
 
 |Tests| |Coverage| |Conda| |PyPI|
 
-Python wrapper for <https://github.com/iterative/terraform-provider-iterative>.
+Python wrapper for `terraform-provider-iterative <https://github.com/iterative/terraform-provider-iterative>`_.
+
+
+Installation
+------------
+
+- ``pip install tpi``
+
+
 Contributions
 -------------
 
