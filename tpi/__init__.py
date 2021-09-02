@@ -21,6 +21,7 @@ except ImportError:
         __version__ = "UNKNOWN"
 
 from .base import TPIException
+from .bin import terraform as terraform_binary
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class TPIError(TPIException):
 
 class TerraformProviderIterative(Terraform):
     def cmd(self, *args, **kwargs):
+        terraform_binary()
         log.debug(" ".join(self.generate_cmd_string(*args, **kwargs)))
         kwargs["capture_output"] = False
         ret, _stdout, _stderr = super().cmd(*args, **kwargs)
