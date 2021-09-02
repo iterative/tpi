@@ -3,7 +3,7 @@ import logging
 import platform
 import re
 from functools import partial
-from os import PathLike
+from os import PathLike, getenv, pathsep
 from pathlib import Path
 from typing import Union
 
@@ -27,8 +27,16 @@ AnyPath = Union[str, "PathLike[str]", Path]
 
 
 def terraform(cache: AnyPath = CACHE_DIR, version: str = VERSION_TF) -> Path:
+    """
+    Finds the first terraform binary on the $PATH,
+    otherwise downloads `version` to `cache`.
+    """
+    base_bin = "terraform" + (".exe" if OS == "windows" else "")
+    for path in map(Path, getenv("PATH").split(pathsep)):
+        if (path / base_bin).is_file():
+            return (path / base_bin).resolve()
     cache = Path(cache).expanduser()
-    bin = cache / ("terraform" + (".exe" if OS == "windows" else ""))
+    bin = cache / base_bin
     url = (
         f"https://releases.hashicorp.com/terraform"
         f"/{version}/terraform_{version}_{OS}_{ARCH}.zip"
