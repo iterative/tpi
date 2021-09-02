@@ -25,8 +25,9 @@ class TerraformBackend(BaseMachineBackend):
             raise TPIError("terraform failed") from exc
 
     def create(self, name: Optional[str] = None, **config):
-        from tpi import render_json
         from python_terraform import IsFlagged
+
+        from tpi import render_json
 
         assert name and "cloud" in config
         with self.make_tf(name) as tf:

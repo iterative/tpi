@@ -13,10 +13,12 @@ tpi (master)$ pytest              # run all tests
 
 ## Layout
 
-Most of the magic lives in [`tpi/__init__.py`](./tpi/__init__.py).
-
 - [tpi/](./tpi/)
   - [`__init__.py`](./tpi/__init__.py)
+  - [`bin.py`](./tpi/bin.py) - helper for downloading terraform binaries
+  - [`base.py`](./tpi/base.py) - abstract base class (ABC)
+  - [`terraform.py`](./tpi/terraform.py) - wrapper around ABC
+  - [`templates/`](./tpi/templates/) - HCL/JSON templates (`main.tf`)
   - [`main.py`](./tpi/main.py)
     - `get_main_parser()` - returns `tpi`'s own parser object
     - `main()` - `tpi`'s own CLI application
