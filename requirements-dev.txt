@@ -1,5 +1,5 @@
+mock
 pytest
 pytest-cov
 pytest-mock
 pytest-timeout
-sshfs>=2021.7.1
