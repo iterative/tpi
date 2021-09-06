@@ -126,14 +126,31 @@ def test_instances(terraform, resource):
     assert list(terraform.instances(resource)) == [expected]
 
 
-def test_shell(terraform, resource, mocker):
+def test_shell_async(terraform, resource, mocker):
     data = json.loads(TEST_RESOURCE_STATE)
     expected = data["resources"][0]["instances"][0]["attributes"]
     mock_connect = mocker.patch("asyncssh.connect", return_value=MagicMock())
+    mocker.patch("shutil.which", return_value=None)
     terraform.run_shell(name=resource)
     mock_connect.assert_called_once_with(
         host=expected["instance_ip"],
         username="ubuntu",
         client_keys=ANY,
         known_hosts=None,
+    )
+
+
+def test_shell_default(terraform, resource, mocker):
+    data = json.loads(TEST_RESOURCE_STATE)
+    expected = data["resources"][0]["instances"][0]["attributes"]
+    mock_run = mocker.patch("subprocess.run")
+    mocker.patch("shutil.which", return_value="/usr/bin/ssh")
+    terraform.run_shell(name=resource)
+    mock_run.assert_called_once_with(
+        [
+            "ssh",
+            "-i",
+            ANY,
+            f"ubuntu@{expected['instance_ip']}",
+        ]
     )
