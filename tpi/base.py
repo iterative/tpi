@@ -1,8 +1,13 @@
 import asyncio
+import itertools
 import os
+import shutil
+import subprocess
 import sys
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Iterator, Optional, Union
+
+import funcy
 
 if TYPE_CHECKING:
     from os import PathLike
@@ -39,11 +44,18 @@ class BaseMachineBackend(ABC):
         """Spawn an interactive SSH shell for the specified machine."""
 
     def _shell(self, *args, **kwargs):
-        """Sync wrapper for an asyncssh shell session.
+        """Sync wrapper for an SSH shell session.
 
-        Args will be passed into asyncssh.connect().
+        The default 'ssh' client will be used when available in PATH,
+        otherwise a basic shell session will be run via asyncssh.
+
+        Args will be passed into asyncssh.connect() or converted into the
+        equivalent OpenSSH CLI flags.
         """
         import asyncssh
+
+        if shutil.which("ssh"):
+            return self._shell_default(*args, **kwargs)
 
         loop = asyncio.new_event_loop()
         try:
@@ -65,3 +77,18 @@ class BaseMachineBackend(ABC):
                 stdout=sys.stdout,
                 stderr=sys.stderr,
             )
+
+    def _shell_default(
+        *args, host=None, username=None, port=None, client_keys=None, **kwargs
+    ):
+        assert host
+
+        cmd = ["ssh"]
+        if client_keys:
+            if isinstance(client_keys, str):
+                client_keys = [client_keys]
+            cmd.extend(funcy.cat(zip(itertools.repeat("-i"), client_keys)))
+        user = f"{username}@" if username else ""
+        port = f":{port}" if port is not None else ""
+        cmd.append(f"{user}{host}{port}")
+        subprocess.run(cmd)
