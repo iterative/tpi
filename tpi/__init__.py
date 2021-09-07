@@ -20,8 +20,8 @@ except ImportError:
     except (ImportError, LookupError):
         __version__ = "UNKNOWN"
 
-from .base import TPIException
 from .bin import terraform as terraform_binary
+from .terraform import TPIException
 
 log = logging.getLogger(__name__)
 

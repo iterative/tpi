@@ -1,16 +1,29 @@
-import logging
+import asyncio
 import os
+import sys
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from itertools import repeat
+from shutil import which
+from subprocess import run
+from typing import TYPE_CHECKING, Iterator, Optional, Union
 
-from funcy import first
+from funcy import cat, first
 
-from .base import BaseMachineBackend
+if TYPE_CHECKING:
+    from os import PathLike
 
-logger = logging.getLogger(__name__)
+StrPath = Union[str, "PathLike[str]"]
 
 
-class TerraformBackend(BaseMachineBackend):
+class TPIException(Exception):
+    pass
+
+
+class TerraformBackend:
+    def __init__(self, tmp_dir: StrPath, **kwargs):
+        self.tmp_dir = tmp_dir
+        os.makedirs(self.tmp_dir, exist_ok=True)
+
     @contextmanager
     def make_tf(self, name: str):
         from tpi import TerraformProviderIterative, TPIError
@@ -25,6 +38,7 @@ class TerraformBackend(BaseMachineBackend):
             raise TPIError("terraform failed") from exc
 
     def create(self, name: Optional[str] = None, **config):
+        """Create and start an instance of the specified machine."""
         from python_terraform import IsFlagged
 
         from tpi import render_json
@@ -38,6 +52,7 @@ class TerraformBackend(BaseMachineBackend):
             tf.cmd("apply", auto_approve=IsFlagged)
 
     def destroy(self, name: Optional[str] = None, **config):
+        """Stop and destroy all instances of the specified machine."""
         from python_terraform import IsFlagged
 
         assert name
@@ -47,20 +62,17 @@ class TerraformBackend(BaseMachineBackend):
                 tf.cmd("destroy", auto_approve=IsFlagged)
 
     def instances(self, name: Optional[str] = None, **config) -> Iterator[dict]:
+        """Iterate over status of all instances of the specified machine."""
         assert name
 
         with self.make_tf(name) as tf:
             yield from tf.iter_instances(name)
 
-    def _default_resource(self, name):
-        from tpi import TPIError
-
-        resource = first(self.instances(name))
-        if not resource:
-            raise TPIError(f"No active '{name}' instances")
-        return resource
+    def close(self):
+        pass
 
     def run_shell(self, name: Optional[str] = None, **config):
+        """Spawn an interactive SSH shell for the specified machine."""
         from tpi import TerraformProviderIterative
 
         resource = self._default_resource(name)
@@ -71,3 +83,61 @@ class TerraformBackend(BaseMachineBackend):
                 client_keys=pem,
                 known_hosts=None,
             )
+
+    def _default_resource(self, name):
+        from tpi import TPIError
+
+        resource = first(self.instances(name))
+        if not resource:
+            raise TPIError(f"No active '{name}' instances")
+        return resource
+
+    def _shell(self, *args, **kwargs):
+        """Sync wrapper for an SSH shell session.
+
+        The default 'ssh' client will be used when available in PATH,
+        otherwise a basic shell session will be run via asyncssh.
+
+        Args will be passed into asyncssh.connect() or converted into the
+        equivalent OpenSSH CLI flags.
+        """
+        import asyncssh
+
+        if which("ssh"):
+            return self._shell_default(*args, **kwargs)
+
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(self._shell_async(*args, **kwargs))
+        except (OSError, asyncssh.Error) as exc:
+            raise TPIException("SSH connection failed") from exc
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
+
+    async def _shell_async(self, *args, **kwargs):
+        import asyncssh
+
+        async with asyncssh.connect(*args, **kwargs) as conn:
+            await conn.run(
+                term_type=os.environ.get("TERM", "xterm"),
+                stdin=sys.stdin,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+
+    def _shell_default(
+        *args, host=None, username=None, port=None, client_keys=None, **kwargs
+    ):
+        assert host
+
+        cmd = ["ssh"]
+        if client_keys:
+            if isinstance(client_keys, str):
+                client_keys = [client_keys]
+            cmd.extend(cat(zip(repeat("-i"), client_keys)))
+        user = f"{username}@" if username else ""
+        port = f":{port}" if port is not None else ""
+        cmd.append(f"{user}{host}{port}")
+        run(cmd)
