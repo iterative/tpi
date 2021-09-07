@@ -7,6 +7,8 @@ import sys
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Iterator, Optional, Union
 
+import funcy
+
 if TYPE_CHECKING:
     from os import PathLike
 
@@ -85,11 +87,7 @@ class BaseMachineBackend(ABC):
         if client_keys:
             if isinstance(client_keys, str):
                 client_keys = [client_keys]
-            cmd.extend(
-                itertools.chain.from_iterable(
-                    ["-i", keyfile] for keyfile in client_keys
-                )
-            )
+            cmd.extend(funcy.cat(zip(itertools.repeat("-i"), client_keys)))
         user = f"{username}@" if username else ""
         port = f":{port}" if port is not None else ""
         cmd.append(f"{user}{host}{port}")
