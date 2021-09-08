@@ -8,7 +8,7 @@ terraform {
 
 provider "iterative" {}
 
-resource "iterative_machine" "executor" {
+resource "iterative_machine" "{{name}}" {
   {% if name %}name = "{{name}}"{% endif %}
   {% if cloud %}cloud = "{{cloud}}"{% endif %}
   {% if region %}region = "{{region}}"{% endif %}
