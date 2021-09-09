@@ -101,10 +101,10 @@ class TerraformBackend:
         """
         from shutil import which
 
-        from asyncssh import Error as AsyncSshError
-
         if which("ssh"):
             return self._shell_default(*args, **kwargs)
+
+        from asyncssh import Error as AsyncSshError
 
         loop = asyncio.new_event_loop()
         try:
