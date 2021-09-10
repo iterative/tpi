@@ -23,4 +23,10 @@ resource "iterative_machine" "{{name}}" {
 {{ startup_script }}
   EOF
   {% endif %}
+  {% if metadata %}metadata = {
+    {% for key, value in metadata.items() %}
+    {{key}} = "{{value}}"
+    {% endfor %}
+  }
+  {% endif %}
 }
