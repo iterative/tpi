@@ -24,9 +24,7 @@ resource "iterative_machine" "{{name}}" {
   EOF
   {% endif %}
   {% if metadata %}metadata = {
-    {% for key, value in metadata.items() %}
-    {{key}} = "{{value}}"
+    {% for key, value in metadata.items() %}{{key}} = "{{value}}"
     {% endfor %}
-  }
-  {% endif %}
+  }{% endif %}
 }
