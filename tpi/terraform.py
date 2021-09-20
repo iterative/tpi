@@ -131,3 +131,37 @@ class TerraformBackend:
         port = f":{port}" if port is not None else ""
         cmd.append(f"{user}{host}{port}")
         run(cmd)
+
+    def rename(self, name, new, **kwargs):
+        """rename an exist machine"""
+        import json
+        import shutil
+
+        from tpi import TPIError, render_json
+
+        assert name and new
+
+        new_dir = os.path.join(self.tmp_dir, new)
+        old_dir = os.path.join(self.tmp_dir, name)
+        if os.path.exists(new_dir):
+            raise TPIError(f"{new_dir} already exists")
+
+        if not os.path.exists(old_dir):
+            return
+
+        mtype = "iterative_machine"
+        with self.make_tf(name) as tf:
+            tf_file = os.path.join(tf.working_dir, "main.tf.json")
+            with open(tf_file) as f_r:
+                main_json = json.load(f_r)
+            config = main_json["resource"]["iterative_machine"].get(name, None)
+            if not config:
+                raise TPIError(f"machine {name} not exist in `main.tf.json`")
+
+            tf.cmd("state mv", f"{mtype}.{name}", f"{mtype}.{new}")
+
+            config["name"] = new
+            with open(tf_file, "w", encoding="utf-8") as fobj:
+                fobj.write(render_json(**config, indent=2))
+
+        shutil.move(old_dir, new_dir)
