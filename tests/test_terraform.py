@@ -65,8 +65,8 @@ TEST_MAIN_TF = """
   },
   "resource": {
     "iterative_machine": {
-      "foo": {
-        "name": "foo",
+      "test-resource": {
+        "name": "test-resource",
         "cloud": "aws"
       }
     }
@@ -173,13 +173,20 @@ def test_shell_default(terraform, resource, mocker):
     )
 
 
-def test_rename(tmp_path, terraform, resource, mocker):
-    path = tmp_path / "foo" / "main.tf.json"
-    path.parent.mkdir()
+def test_rename(tmp_path, resource):
+    from tpi.terraform import TerraformBackend
+
+    new_name = "new-resource"
+    path = tmp_path / "test-resource" / "main.tf.json"
     path.write_text(TEST_MAIN_TF, encoding="utf-8")
-    mocker.patch("python_terraform.Terraform.cmd", return_value=(0, None, None))
-    terraform.rename(name="foo", new="bar")
-    data = json.loads(TEST_RESOURCE_STATE)
-    with open(tmp_path / "bar" / "main.tf.json") as fobj:
+
+    tf = TerraformBackend(tmp_path)
+    tf.rename(name="test-resource", new=new_name)
+
+    with open(tmp_path / new_name / "main.tf.json") as fobj:
         data = json.load(fobj)
-    assert data["resource"]["iterative_machine"]["bar"]["name"] == "bar"
+    assert data["resource"]["iterative_machine"][new_name]["name"] == new_name
+
+    with open(tmp_path / new_name / "terraform.tfstate") as fobj:
+        tfstate = json.load(fobj)
+    assert tfstate["resources"][0]["name"] == new_name
