@@ -156,7 +156,7 @@ class TerraformBackend:
                 main_json = json.load(f_r)
             config = main_json["resource"][mtype].get(name, None)
             if not config:
-                raise TPIError(f"machine {name} not exist in `main.tf.json`")
+                raise TPIError(f"machine {name} not found in {tf_file}")
 
             tf.cmd("state mv", f"{mtype}.{name}", f"{mtype}.{new}")
 
