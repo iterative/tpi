@@ -154,7 +154,7 @@ class TerraformBackend:
             tf_file = os.path.join(tf.working_dir, "main.tf.json")
             with open(tf_file) as f_r:
                 main_json = json.load(f_r)
-            config = main_json["resource"]["iterative_machine"].get(name, None)
+            config = main_json["resource"][mtype].get(name, None)
             if not config:
                 raise TPIError(f"machine {name} not exist in `main.tf.json`")
 
