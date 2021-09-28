@@ -133,7 +133,7 @@ class TerraformBackend:
         run(cmd)
 
     def rename(self, name, new, **kwargs):
-        """rename an exist machine"""
+        """rename an existing machine"""
         import json
         import shutil
 
