@@ -147,7 +147,7 @@ class TerraformBackend:
             raise TPIError(f"{new_dir} already exists")
 
         if not os.path.exists(old_dir):
-            return
+            raise TPIError(f"{old_dir} not found")
 
         mtype = "iterative_machine"
         with self.make_tf(name) as tf:
