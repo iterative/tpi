@@ -132,36 +132,13 @@ class TerraformBackend:
         cmd.append(f"{user}{host}{port}")
         run(cmd)
 
-    def rename(self, name, new, **kwargs):
-        """rename an existing machine"""
-        import json
-        import shutil
+    def state_mv(self, source, destination, **kwargs):
+        """Retain an existing remote object but track it as a
+        different resource instance address.
+        """
+        assert source and destination
 
-        from tpi import TPIError, render_json
+        name = source.split(".")[-1]
 
-        assert name and new
-
-        new_dir = os.path.join(self.tmp_dir, new)
-        old_dir = os.path.join(self.tmp_dir, name)
-        if os.path.exists(new_dir):
-            raise TPIError(f"{new_dir} already exists")
-
-        if not os.path.exists(old_dir):
-            raise TPIError(f"{old_dir} not found")
-
-        mtype = "iterative_machine"
         with self.make_tf(name) as tf:
-            tf_file = os.path.join(tf.working_dir, "main.tf.json")
-            with open(tf_file) as f_r:
-                main_json = json.load(f_r)
-            config = main_json["resource"][mtype].get(name, None)
-            if not config:
-                raise TPIError(f"machine {name} not found in {tf_file}")
-
-            tf.cmd("state mv", f"{mtype}.{name}", f"{mtype}.{new}")
-
-            config["name"] = new
-            with open(tf_file, "w", encoding="utf-8") as fobj:
-                fobj.write(render_json(**config, indent=2))
-
-        shutil.move(old_dir, new_dir)
+            tf.cmd("state mv", f"{source}", f"{destination}")

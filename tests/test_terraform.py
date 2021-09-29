@@ -173,20 +173,17 @@ def test_shell_default(terraform, resource, mocker):
     )
 
 
-def test_rename(tmp_path, resource):
+def test_state_mv(tmp_path, resource):
     from tpi.terraform import TerraformBackend
 
     new_name = "new-resource"
-    path = tmp_path / "test-resource" / "main.tf.json"
-    path.write_text(TEST_MAIN_TF, encoding="utf-8")
+    mtype = "iterative_machine"
 
     tf = TerraformBackend(tmp_path)
-    tf.rename(name="test-resource", new=new_name)
+    tf.state_mv(
+        name=resource, source=f"{mtype}.{resource}", destination=f"{mtype}.{new_name}"
+    )
 
-    with open(tmp_path / new_name / "main.tf.json") as fobj:
-        data = json.load(fobj)
-    assert data["resource"]["iterative_machine"][new_name]["name"] == new_name
-
-    with open(tmp_path / new_name / "terraform.tfstate") as fobj:
+    with open(tmp_path / resource / "terraform.tfstate") as fobj:
         tfstate = json.load(fobj)
     assert tfstate["resources"][0]["name"] == new_name
