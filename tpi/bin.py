@@ -7,9 +7,6 @@ from os import PathLike, getenv, pathsep
 from pathlib import Path
 from typing import Union
 
-from miutil.fdio import extractall
-from miutil.web import urlopen_cached
-
 __all__ = ["ARCH", "CACHE_DIR", "OS", "VERSION_TF", "terraform"]
 log = logging.getLogger(__name__)
 
@@ -42,6 +39,9 @@ def terraform(cache: AnyPath = CACHE_DIR, version: str = VERSION_TF) -> Path:
         f"/{version}/terraform_{version}_{OS}_{ARCH}.zip"
     )
     if not bin.is_file():
+        from miutil.fdio import extractall
+        from miutil.web import urlopen_cached
+
         log.info("Downloading to %s", cache)
         with urlopen_cached(url, cache) as fd:
             extractall(fd, cache)
