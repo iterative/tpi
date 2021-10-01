@@ -149,6 +149,7 @@ def test_shell_default(terraform, resource, mocker):
     )
 
 
+@pytest.mark.timeout(10)
 def test_state_mv(tmp_path, resource):
     from tpi.terraform import TerraformBackend
 
