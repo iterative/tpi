@@ -1,7 +1,6 @@
 import asyncio
 import os
 import sys
-from contextlib import contextmanager
 from itertools import repeat
 from typing import TYPE_CHECKING, Iterator, Optional, Union
 
@@ -18,22 +17,14 @@ class TPIException(Exception):
 
 
 class TerraformBackend:
-    def __init__(self, tmp_dir: StrPath, **kwargs):
-        self.tmp_dir = tmp_dir
-        os.makedirs(self.tmp_dir, exist_ok=True)
+    """Class for managing a named TPI iterative-machine resource."""
 
-    @contextmanager
-    def make_tf(self, name: str):
-        from tpi import TerraformProviderIterative, TPIError
+    def __init__(self, working_dir: StrPath, **kwargs):
+        from tpi import TerraformProviderIterative
 
-        try:
-            working_dir = os.path.join(self.tmp_dir, name)
-            os.makedirs(working_dir, exist_ok=True)
-            yield TerraformProviderIterative(working_dir=working_dir)
-        except TPIError:
-            raise
-        except Exception as exc:
-            raise TPIError("terraform failed") from exc
+        self.working_dir = working_dir
+        os.makedirs(self.working_dir, exist_ok=True)
+        self.tf = TerraformProviderIterative(working_dir=self.working_dir)
 
     def create(self, name: Optional[str] = None, **config):
         """Create and start an instance of the specified machine."""
@@ -42,12 +33,11 @@ class TerraformBackend:
         from tpi import render_json
 
         assert name and "cloud" in config
-        with self.make_tf(name) as tf:
-            tf_file = os.path.join(tf.working_dir, "main.tf.json")
-            with open(tf_file, "w", encoding="utf-8") as fobj:
-                fobj.write(render_json(name=name, **config, indent=2))
-            tf.cmd("init")
-            tf.cmd("apply", auto_approve=IsFlagged)
+        tf_file = os.path.join(self.working_dir, "main.tf.json")
+        with open(tf_file, "w", encoding="utf-8") as fobj:
+            fobj.write(render_json(name=name, **config, indent=2))
+        self.tf.cmd("init")
+        self.tf.cmd("apply", auto_approve=IsFlagged)
 
     def destroy(self, name: Optional[str] = None, **config):
         """Stop and destroy all instances of the specified machine."""
@@ -55,16 +45,14 @@ class TerraformBackend:
 
         assert name
 
-        with self.make_tf(name) as tf:
-            if first(tf.iter_instances(name)):
-                tf.cmd("destroy", auto_approve=IsFlagged)
+        if first(self.tf.iter_instances(name)):
+            self.tf.cmd("destroy", auto_approve=IsFlagged)
 
     def instances(self, name: Optional[str] = None, **config) -> Iterator[dict]:
         """Iterate over status of all instances of the specified machine."""
         assert name
 
-        with self.make_tf(name) as tf:
-            yield from tf.iter_instances(name)
+        yield from self.tf.iter_instances(name)
 
     def close(self):
         pass
