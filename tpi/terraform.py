@@ -61,7 +61,7 @@ class TerraformBackend:
         """Spawn an interactive SSH shell for the specified machine."""
         from tpi import TerraformProviderIterative
 
-        resource = self._default_resource(name)
+        resource = self.default_resource(name)
         with TerraformProviderIterative.pemfile(resource) as pem:
             self._shell(
                 host=resource["instance_ip"],
@@ -70,7 +70,7 @@ class TerraformBackend:
                 known_hosts=None,
             )
 
-    def _default_resource(self, name):
+    def default_resource(self, name):
         from tpi import TPIError
 
         resource = first(self.instances(name))
