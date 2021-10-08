@@ -1,5 +1,4 @@
 import json
-import os
 
 import pytest
 from mock import ANY, MagicMock
@@ -66,7 +65,7 @@ def terraform(tmp_path, mocker):
 @pytest.fixture
 def resource(tmp_path):
     name = "test-resource"
-    path = tmp_path / name / "terraform.tfstate"
+    path = tmp_path / "terraform.tfstate"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(TEST_RESOURCE_STATE, encoding="utf-8")
     yield name
@@ -92,12 +91,6 @@ def test_make_pemfile():
             assert fobj.read() == content
 
 
-def test_make_tf(terraform):
-    name = "foo"
-    with terraform.make_tf(name) as tf:
-        assert tf.working_dir == os.path.join(terraform.tmp_dir, name)
-
-
 def test_create(tmp_path, terraform):
     name = "foo"
     terraform.create(name=name, cloud="aws")
@@ -105,8 +98,8 @@ def test_create(tmp_path, terraform):
     terraform.cmd_mock.assert_any_call(
         "apply", capture_output=False, auto_approve=IsFlagged
     )
-    assert (tmp_path / name / "main.tf.json").exists()
-    with open(tmp_path / name / "main.tf.json") as fobj:
+    assert (tmp_path / "main.tf.json").exists()
+    with open(tmp_path / "main.tf.json") as fobj:
         data = json.load(fobj)
     assert data["resource"]["iterative_machine"] == {
         name: {"name": name, "cloud": "aws"},
