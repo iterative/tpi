@@ -141,4 +141,4 @@ class TerraformBackend:
         name = source.split(".")[-1]
 
         with self.make_tf(name) as tf:
-            tf.cmd("state mv", f"{source}", f"{destination}")
+            tf.cmd("state mv", source, destination)
