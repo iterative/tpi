@@ -157,10 +157,8 @@ def test_state_mv(tmp_path, resource):
     mtype = "iterative_machine"
 
     tf = TerraformBackend(tmp_path)
-    tf.state_mv(
-        name=resource, source=f"{mtype}.{resource}", destination=f"{mtype}.{new_name}"
-    )
+    tf.state_mv(source=f"{mtype}.{resource}", destination=f"{mtype}.{new_name}")
 
-    with open(tmp_path / resource / "terraform.tfstate") as fobj:
+    with open(tmp_path / "terraform.tfstate") as fobj:
         tfstate = json.load(fobj)
     assert tfstate["resources"][0]["name"] == new_name

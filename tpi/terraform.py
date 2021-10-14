@@ -137,8 +137,4 @@ class TerraformBackend:
         different resource instance address.
         """
         assert source and destination
-
-        name = source.split(".")[-1]
-
-        with self.make_tf(name) as tf:
-            tf.cmd("state mv", source, destination)
+        self.tf.cmd("state mv", source, destination)
