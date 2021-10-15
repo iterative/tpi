@@ -131,3 +131,10 @@ class TerraformBackend:
         port = f":{port}" if port is not None else ""
         cmd.append(f"{user}{host}{port}")
         run(cmd)
+
+    def state_mv(self, source, destination, **kwargs):
+        """Retain an existing remote object but track it as a
+        different resource instance address.
+        """
+        assert source and destination
+        self.tf.cmd("state mv", source, destination)
