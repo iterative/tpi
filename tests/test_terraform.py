@@ -64,11 +64,10 @@ def terraform(tmp_path, mocker):
 
 @pytest.fixture
 def resource(tmp_path):
-    name = "test-resource"
     path = tmp_path / "terraform.tfstate"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(TEST_RESOURCE_STATE, encoding="utf-8")
-    yield name
+    yield "test-resource"
 
 
 def test_run_cmd(mocker):

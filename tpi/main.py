@@ -5,8 +5,7 @@ log = logging.getLogger(__name__)
 
 
 def get_main_parser():
-    parser = argparse.ArgumentParser(prog="tpi")
-    return parser
+    return argparse.ArgumentParser(prog="tpi")
 
 
 def main(argv=None):

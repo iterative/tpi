@@ -104,8 +104,6 @@ def render_json(indent=None, **config) -> str:
     assert "name" in config and "cloud" in config
     tf_config = OrderedDict(BASE_CONFIG)
     name = config["name"]
-    resource = {
-        name: {key: value for key, value in config.items()},
-    }
+    resource = {name: dict(config.items())}
     tf_config["resource"] = {"iterative_machine": resource}
     return json.dumps(tf_config, indent=indent)
